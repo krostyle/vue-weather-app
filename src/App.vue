@@ -1,17 +1,17 @@
 <template>
-  <div id="app">
+  <div id="app" :class="typeof weather.main != 'undefined' && weather.main.temp > 16 ? 'warm' : ''" >
     <main>
       <div class="search-box">
-        <input type="text" class="search-bar" placeholder="Buscar..."/>
-      </div>
-      <div class="weather-wrap">
+        <input type="text" class="search-bar" placeholder="Buscar..." v-model="query" @keypress="fetchWeather"/>
+      </div>      
+      <div class="weather-wrap" v-if="weather.main">
         <div class="location-box">
-          <div class="location">Santiago, Chile</div>
-          <div class="date">Lunes 06 de Enero de 2022</div>
+          <div class="location">{{weather.name}},{{weather.sys.country}}</div>
+          <div class="date">{{dateBuilder()}}</div>
         </div>
         <div class="weather-box">
-          <div class="temp">16°C</div>
-          <div class="weather">Despejado</div>
+          <div class="temp">{{Math.round(weather.main.temp)}}° C</div>
+          <div class="weather">{{capitalize(weather.weather[0].description)}}</div>
         </div>
       </div>
     </main>
@@ -19,12 +19,43 @@
 </template>
 
 <script>
-
+import axios from 'axios';
+import moment from 'moment';
 export default {
   name: 'app',
   data() {
     return {
-      api_key:'08ba90eb2b3b0cab3a504219756e1589'
+      api_key:'08ba90eb2b3b0cab3a504219756e1589',
+      url_base:'https://api.openweathermap.org/data/2.5/',
+      query:'',
+      weather:{}
+    }
+  },
+  methods:{
+    async fetchWeather(e){
+      if(e.keyCode===13){
+        const {data}=await axios.get(`${this.url_base}weather?q=${this.query}&units=metric&lang=es&appid=${this.api_key}`)
+        console.log(data);
+        this.setResults(data);
+      }
+    },
+    setResults(data){
+      this.weather=data;      
+    },
+    dateBuilder(){
+      const date=new Date();
+      moment.locale('es');
+      const day=this.capitalize(moment(date).format('dddd'));
+      const month=this.capitalize(moment(date).format('MMMM'));
+      const year=moment(date).format('YYYY');
+      const numDay=moment(date).format('DD');
+
+      return (`${day}, ${numDay} de ${month} de ${year}`);
+    },
+
+    capitalize (s){
+      if (typeof s !== 'string') return ''
+      return s.charAt(0).toUpperCase() + s.slice(1)
     }
   }
 }
@@ -46,6 +77,10 @@ body{
   background-size: cover;
   background-position: bottom ;
   transition: 0.4s;
+}
+
+#app.warm{
+  background-image: url('./assets/warm-bg.jpg');
 }
 
 main {
